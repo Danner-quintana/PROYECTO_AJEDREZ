@@ -5,6 +5,8 @@ const CENTRO := Vector2(0.044, 0.163)
 const ELEVACION_SELECCION := 0.08   # 0.0 = no se eleva; 0.3 era lo que teníamos antes
 const ALTURA_TABLERO := 0.05
 
+const MenuPausa = preload("res://menu_pausa.tscn")
+var menu_pausa
 
 
 const CerebroIA = preload("res://scripts/cerebro_ia.gd")
@@ -55,6 +57,7 @@ var seleccionada: Variant = null      # la pieza elegida (o null)
 var en_movimiento: bool = false
 var turno: int = 1           # 1 o 2
 var juego_terminado: bool = false
+var ganador: int = 0         # equipo ganador (0 = nadie todavía)
 var etiqueta: Label
 
 # Estado del duelo
@@ -89,6 +92,10 @@ func _ready() -> void:
 	etiqueta.add_theme_constant_override("outline_size", 8)
 	hud = HudDuelo.new()
 	add_child(hud)
+	
+	menu_pausa = MenuPausa.instantiate()
+	add_child(menu_pausa)
+	menu_pausa.configurar(self)
 
 	# Aquí se registran las piezas. Para agregar otra, copia una línea.
 		# Equipo 1 (tú)
@@ -102,6 +109,12 @@ func _ready() -> void:
 	piezas.append({"nodo": $"piezaLuigi(alfil)", "tipo": "alfil", "casilla": Vector2i(2, 0), "equipo": 2})
 	piezas.append({"nodo": $"piezaGombaRival(peon)", "tipo": "peon", "casilla": Vector2i(3, 1), "equipo": 2})
 	piezas.append({"nodo": $"piezaGombaRival2(peon)", "tipo": "peon", "casilla": Vector2i(4, 1), "equipo": 2})
+	
+	var ranura: int = GestorPartidas.ranura_a_cargar
+	if ranura > 0:
+		restaurar_partida(GestorPartidas.cargar(ranura))
+		GestorPartidas.ranura_a_cargar = -1
+	
 	for p in piezas:
 		p["nodo"].position = calcular_pos(p["casilla"])
 		p["nodo"].rotation_degrees.y = giro_inicial(p["equipo"])
@@ -109,7 +122,11 @@ func _ready() -> void:
 
 	
 
-	actualizar_etiqueta()
+		actualizar_etiqueta()
+	if juego_terminado:
+		texto_turno("¡Gana el Jugador " + str(ganador) + "!   (Esc para salir)", ganador)
+	elif turno == ia_equipo:
+		jugar_ia()
 
 func crear_material(color: Color) -> StandardMaterial3D:
 	var m = StandardMaterial3D.new()
@@ -149,6 +166,9 @@ func _process(_delta: float) -> void:
 
 # Entrada: teclas durante el duelo, ratón durante el tablero
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):   # tecla Esc
+		abrir_pausa()
+		return
 	if duelo_en_curso:
 		if event is InputEventKey and event.pressed and not event.echo:
 			tecla_en_duelo(event.keycode)
@@ -185,6 +205,43 @@ func _unhandled_input(event: InputEvent) -> void:
 					atacante["nodo"].position.y = ALTURA_TABLERO
 					iniciar_duelo(atacante, defensor)
 				# Si no es válido, no pasa nada y sigue seleccionada
+func abrir_pausa() -> void:
+	if duelo_en_curso or en_movimiento:
+		return
+	if not juego_terminado and turno == ia_equipo:
+		return
+	if seleccionada != null:
+		seleccionada["nodo"].position.y = ALTURA_TABLERO
+		seleccionada = null
+	menu_pausa.abrir()
+
+# Lo que se escribe en la ranura
+func datos_de_partida() -> Dictionary:
+	var lista: Array = []
+	for p in piezas:
+		lista.append({
+			"nodo": String(p["nodo"].name),
+			"tipo": p["tipo"],
+			"casilla": [p["casilla"].x, p["casilla"].y],
+			"equipo": p["equipo"],
+		})
+	return {"turno": turno, "piezas": lista, "terminado": juego_terminado, "ganador": ganador}
+# Coloca cada pieza donde estaba y elimina las que ya habían sido capturadas
+func restaurar_partida(datos: Dictionary) -> void:
+	var guardadas: Dictionary = {}
+	for g in datos.get("piezas", []):
+		guardadas[g["nodo"]] = g
+	for p in piezas.duplicate():
+		var nombre: String = String(p["nodo"].name)
+		if guardadas.has(nombre):
+			var g: Dictionary = guardadas[nombre]
+			p["casilla"] = Vector2i(int(g["casilla"][0]), int(g["casilla"][1]))
+		else:
+			piezas.erase(p)
+			p["nodo"].queue_free()
+	turno = int(datos.get("turno", 1))
+	juego_terminado = bool(datos.get("terminado", false))
+	ganador = int(datos.get("ganador", 0))
 
 # Mueve una pieza a una casilla (con animación) y pasa el turno
 func mover_pieza(p: Dictionary, casilla: Vector2i) -> void:
@@ -348,7 +405,8 @@ func eliminar_pieza(p: Dictionary) -> void:
 	p["nodo"].queue_free()
 	if p["tipo"] == "rey":
 		juego_terminado = true
-		texto_turno("¡Gana el Jugador " + str(3 - p["equipo"]) + "!", 3 - p["equipo"])
+		ganador = 3 - p["equipo"]
+		texto_turno("¡Gana el Jugador " + str(ganador) + "!   (Esc para salir)", ganador)
 
 # Devuelve la pieza que está en una casilla (o null si está vacía)
 func pieza_en(casilla: Vector2i) -> Variant:
