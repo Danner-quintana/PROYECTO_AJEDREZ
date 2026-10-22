@@ -29,23 +29,23 @@ size_flags_horizontal = 4
 
 [node name="Titulo" type="Label" parent="Botones" unique_id=817604480]
 layout_mode = 2
-text = "PAUSA"
+text = "PAUSED"
 
 [node name="BtnContinuar" type="Button" parent="Botones" unique_id=865473906]
 layout_mode = 2
-text = "Continuar"
+text = "Resume"
 
 [node name="BtnGuardar" type="Button" parent="Botones" unique_id=315518378]
 layout_mode = 2
-text = "Guardar partida"
+text = "Save Game"
 
 [node name="BtnCargar" type="Button" parent="Botones" unique_id=915666949]
 layout_mode = 2
-text = "Cargar partida"
+text = "Load Game"
 
 [node name="BtnMenu" type="Button" parent="Botones" unique_id=243939201]
 layout_mode = 2
-text = "Menú principal"
+text = "Main Menu"
 
 [node name="Ranuras" type="VBoxContainer" parent="." unique_id=955643035]
 visible = false
@@ -66,7 +66,7 @@ layout_mode = 2
 
 [node name="BtnVolver" type="Button" parent="Ranuras" unique_id=1199902432]
 layout_mode = 2
-text = "Volver"
+text = "Back"
 
 [node name="Aviso" type="Label" parent="." unique_id=970841075]
 offset_left = 556.0

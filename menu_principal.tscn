@@ -39,15 +39,15 @@ text = "MARIOPIZ"
 
 [node name="BtnNueva" type="Button" parent="Botones" unique_id=1608437894]
 layout_mode = 2
-text = "Nueva partida"
+text = "New Game"
 
 [node name="BtnContinuar" type="Button" parent="Botones" unique_id=117849535]
 layout_mode = 2
-text = "CARGAR PARTIDA"
+text = "Load Game"
 
 [node name="BtnSalir" type="Button" parent="Botones" unique_id=593977719]
 layout_mode = 2
-text = "Salir"
+text = "Quit"
 
 [node name="Ranuras" type="VBoxContainer" parent="." unique_id=923947644]
 visible = false
@@ -69,4 +69,4 @@ layout_mode = 2
 
 [node name="BtnVolver" type="Button" parent="Ranuras" unique_id=1375587986]
 layout_mode = 2
-text = "VOLVER"
+text = "Back"
